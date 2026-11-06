@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日本の少年漫画 ティア表</title>
+<script src="sortable.min.js"></script>
+<meta property="og:type" content="website">
+<meta property="og:title" content="日本の少年漫画 ティア表">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+  :root{--bg:#141414;--panel:#1d1d1d;--line:#2e2e2e;--text:#eee;--muted:#9a9a9a;--size:110px;--accent:#5b8cff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif}
+  header{max-width:1400px;margin:0 auto;padding:28px 16px 8px;text-align:center}
+  h1{margin:0 0 8px;font-size:clamp(24px,4vw,40px);letter-spacing:.04em}
+  header p{margin:0 auto;max-width:860px;color:var(--muted);line-height:1.7;font-size:14px;white-space:pre-wrap}
+  body.edit header h1,body.edit header p{outline:1px dashed #555;outline-offset:4px;cursor:text;border-radius:4px}
+  .bar{position:sticky;top:0;z-index:5;background:rgba(20,20,20,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .bar-in{max-width:1400px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .bar input[type=search]{flex:1;min-width:180px;background:#262626;border:1px solid #3a3a3a;color:var(--text);padding:9px 12px;border-radius:8px;font-size:15px}
+  .bar label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;white-space:nowrap;cursor:pointer}
+  .count{color:var(--muted);font-size:13px;white-space:nowrap}
+  .btn{background:#2a2a2a;border:1px solid #444;color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;font-family:inherit}
+  .btn:hover{background:#333}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.danger{background:#5a2020;border-color:#7a3030}
+  .btn[hidden]{display:none}
+  .editbar{display:none;max-width:1400px;margin:0 auto;padding:0 16px 10px;gap:10px;align-items:center;flex-wrap:wrap}
+  body.edit .editbar{display:flex}
+  .status{font-size:12px;color:var(--muted)}
+  .status.err{color:#ff8080}
+  .hint{font-size:12px;color:var(--muted)}
+  main{max-width:1400px;margin:14px auto 30px;padding:0 16px}
+  .tiers{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tier{display:flex;border-bottom:1px solid var(--line);background:var(--panel)}
+  .tier:last-child{border-bottom:0}
+  .label{flex:0 0 110px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#111;font-weight:800;font-size:28px;text-align:center;padding:8px;line-height:1.2;word-break:break-all}
+  .label small{font-size:12px;font-weight:600;opacity:.65;margin-top:4px}
+  .label.long{font-size:17px}
+  body.edit .label{cursor:pointer}
+  body.edit .label:hover{filter:brightness(1.1)}
+  .items{flex:1;display:flex;flex-wrap:wrap;gap:8px;padding:10px;align-content:flex-start;min-height:90px}
+  .card{display:block;width:var(--size);cursor:zoom-in;border:0;background:none;padding:0;color:inherit;text-align:left;font:inherit}
+  body.edit .card{cursor:grab}
+  .card .cv{display:block;width:100%;aspect-ratio:3/4;border-radius:6px;overflow:hidden;background:#000;border:1px solid #333;transition:transform .15s,border-color .15s}
+  .card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+  .card:hover .cv,.card:focus-visible .cv{transform:translateY(-2px);border-color:#888}
+  .card .tt{font-size:11.5px;line-height:1.35;margin-top:4px;color:#cfcfcf;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  body.notitle .card .tt{display:none}
+  .card.hide{display:none}
+  .card.hit .cv{border-color:#fff;box-shadow:0 0 0 2px #fff}
+  .sortable-ghost{opacity:.35}
+  .sortable-chosen .cv{border-color:var(--accent)}
+  .pool{display:none;margin-top:16px;border:1px dashed #555;border-radius:12px;background:#181818}
+  body.edit .pool{display:block}
+  .pool h2{margin:0;padding:10px 14px 0;font-size:14px;color:var(--muted);font-weight:600}
+  .pool .items{min-height:110px}
+  .pool.has-items{display:block}
+  .addtier{display:none;margin-top:10px}
+  body.edit .addtier{display:inline-block}
+  /* lightbox + dialogs */
+  .lb,.dlg{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+  .lb.on,.dlg.on{display:flex}
+  .lb-in{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:min(92vw,520px)}
+  .lb img{max-height:72vh;max-width:100%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  .lb .cap{text-align:center}
+  .lb .cap b{font-size:20px;display:block}
+  .pill{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:999px;color:#111;font-weight:700;font-size:13px}
+  .lb .pos{color:var(--muted);font-size:12px;margin-left:8px}
+  .nav{position:fixed;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:0;color:#fff;font-size:30px;width:52px;height:72px;border-radius:10px;cursor:pointer}
+  .nav:hover{background:rgba(255,255,255,.2)}
+  .prev{left:12px}.next{right:12px}
+  .close{position:fixed;top:12px;right:14px;background:none;border:0;color:#fff;font-size:34px;cursor:pointer;line-height:1}
+  .dlg .box{background:#202020;border:1px solid #3a3a3a;border-radius:12px;padding:20px;width:min(440px,94vw);display:flex;flex-direction:column;gap:14px}
+  .dlg h3{margin:0;font-size:17px}
+  .dlg label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+  .dlg input[type=text],.dlg textarea{background:#2a2a2a;border:1px solid #444;color:var(--text);padding:9px 10px;border-radius:8px;font-size:15px;font-family:inherit}
+  .dlg textarea{min-height:90px;resize:vertical}
+  .dlg .row{display:flex;gap:8px;flex-wrap:wrap}
+  .dlg .row.end{justify-content:flex-end}
+  .dlg .row.split{justify-content:space-between}
+  .swatches{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .sw{width:28px;height:28px;border-radius:6px;border:2px solid transparent;cursor:pointer}
+  .sw.on{border-color:#fff}
+  .dlg .preview{width:120px;border-radius:6px;align-self:center}
+  .dropzone{display:none;position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:15;background:var(--accent);color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.5);pointer-events:none}
+  body.filedrag .dropzone{display:block}
+  body.filedrag .tiers,body.filedrag .pool{outline:2px dashed #555;outline-offset:2px}
+  .droptarget{box-shadow:inset 0 0 0 3px var(--accent)!important;background:#1f2638!important}
+  footer{text-align:center;color:#666;font-size:12px;padding:0 16px 30px}
+  @media (max-width:640px){
+    :root{--size:84px}
+    .label{flex-basis:64px;font-size:22px}
+    .label.long{font-size:12px}
+    .items{gap:6px;padding:8px}
+    .nav{width:40px;height:56px;font-size:24px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <p id="desc"></p>
+</header>
+<div class="bar"><div class="bar-in">
+  <input type="search" id="q" placeholder="作品名で探す（例：呪術、フリーレン）">
+  <label>サイズ <input type="range" id="sz" min="70" max="190" value="110"></label>
+  <label><input type="checkbox" id="tt" checked> 作品名を表示</label>
+  <span class="count" id="cnt"></span>
+  <button class="btn primary" id="editBtn" hidden>編集する</button>
+</div>
+<div class="editbar">
+  <button class="btn" id="addImg">＋ 画像を追加</button>
+  <button class="btn" id="addTierTop">＋ ランクを追加</button>
+  <span class="hint">画像はパソコンからドラッグ＆ドロップ、またはコピーして Ctrl+V でも追加できます ／ ドラッグで並び替え ／ ランク名をクリックで名前・色・順番を変更 ／ 画像をクリックで名前変更・削除</span>
+  <button class="btn" id="saveNow">今すぐ保存</button>
+  <button class="btn" id="settingsBtn">設定</button>
+  <span class="status" id="status"></span>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+</div></div>
+<main>
+  <div class="tiers" id="tiers"></div>
+  <section class="pool" id="pool"><h2>未分類（ここから各ランクへドラッグ）</h2><div class="items" id="poolItems"></div></section>
+</main>
+<footer>作品画像の著作権は各権利者に帰属します。</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <button class="close" id="lbx" aria-label="閉じる">×</button>
+  <button class="nav prev" id="lbp" aria-label="前へ">‹</button>
+  <div class="lb-in">
+    <img id="lbi" alt="">
+    <div class="cap"><b id="lbt"></b><span class="pill" id="lbr"></span><span class="pos" id="lbn"></span></div>
+  </div>
+  <button class="nav next" id="lbn2" aria-label="次へ">›</button>
+</div>
+
+<div class="dropzone">ここで離すと追加（ランクの上なら直接そのランクへ／それ以外は未分類へ）</div>
+<div class="dlg" id="dlg"><div class="box" id="dlgBox"></div></div>
+
+<script>
+const COLORS=["#ff7f7f","#ffbf7f","#ffdf7f","#ffff7f","#bfff7f","#7fff7f","#7fffff","#7fbfff","#7f7fff","#ff7fff","#bf7fbf","#ffcc88","#cccccc"];
+let state={title:'',desc:'',tiers:[],pool:[]};
+let editing=false;
+/* GitHub settings (owner only, stored in this browser) */
+const LS='tierlist_gh_v1';
+function loadCfg(){try{return JSON.parse(localStorage.getItem(LS))||null}catch(e){return null}}
+function saveCfg(c){try{c?localStorage.setItem(LS,JSON.stringify(c)):localStorage.removeItem(LS)}catch(e){}}
+function guessRepo(){const h=location.hostname,m=h.match(/^([^.]+)\.github\.io$/);const seg=location.pathname.split('/').filter(Boolean)[0];
+  return m?{owner:m[1],repo:(seg&&!seg.includes('.'))?seg:h}:{owner:'',repo:''};}
+let cfg=loadCfg();
+let dataSha=null;
+const localPreview={};
+let dirty=false, saving=false, saveTimer=null;
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s);
+
+/* ---------- render ---------- */
+let flat=[];
+function render(){
+  $('title').textContent=state.title||'';
+  $('desc').textContent=state.desc||'';
+  document.title=state.title||'ティア表';
+  flat=[];
+  const root=$('tiers');root.innerHTML='';
+  state.tiers.forEach(t=>{
+    const row=document.createElement('section');row.className='tier';
+    const lab=document.createElement('div');lab.className='label'+(t.name.length>2?' long':'');lab.style.background=t.color;
+    const nm=document.createElement('span');nm.textContent=t.name;
+    const sm=document.createElement('small');sm.textContent=t.items.length+'作品';
+    lab.append(nm,sm);lab.onclick=()=>{if(editing)tierDialog(t.id)};
+    const box=document.createElement('div');box.className='items';box.dataset.tier=t.id;
+    t.items.forEach(it=>box.appendChild(card(it,t)));
+    row.append(lab,box);root.appendChild(row);
+  });
+  const pb=$('poolItems');pb.innerHTML='';pb.dataset.tier='__pool';
+  (state.pool||[]).forEach(it=>pb.appendChild(card(it,null)));
+  $('pool').classList.toggle('has-items',(state.pool||[]).length>0);
+  applySearch();
+  if(editing)makeSortable();
+}
+function card(it,t){
+  const idx=flat.length;flat.push({...it,tier:t?t.name:'未分類',color:t?t.color:'#ccc'});
+  const b=document.createElement('div');b.className='card';b.tabIndex=0;b.setAttribute('role','button');b.dataset.i=idx;b.dataset.id=it.id;b.title=it.t;
+  const cv=document.createElement('span');cv.className='cv';
+  const img=document.createElement('img');img.loading='lazy';img.onerror=()=>rawFallback(img,it.src);img.src=localPreview[it.src]||it.src;img.alt=it.t;cv.appendChild(img);
+  const tt=document.createElement('span');tt.className='tt';tt.textContent=it.t;
+  b.append(cv,tt);
+  b.onclick=()=>{if(Date.now()-lastDrag<300)return;editing?itemDialog(it.id):openLb(idx)};
+  b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click();}};
+  return b;
+}
+
+/* ---------- search / view controls ---------- */
+const norm=s=>s.toLowerCase().normalize('NFKC').replace(/[\s・\-ー!！?？。、]/g,'');
+function applySearch(){
+  const q=norm($('q').value);let n=0;
+  document.querySelectorAll('#tiers .card').forEach(c=>{const ok=!q||norm(flat[c.dataset.i].t).includes(q);c.classList.toggle('hide',!ok);c.classList.toggle('hit',!!q&&ok);if(ok)n++;});
+  const total=state.tiers.reduce((s,t)=>s+t.items.length,0);
+  $('cnt').textContent=q?`${n}件ヒット`:`全${total}作品`;
+}
+$('q').addEventListener('input',applySearch);
+$('sz').addEventListener('input',e=>document.documentElement.style.setProperty('--size',e.target.value+'px'));
+$('tt').addEventListener('change',e=>document.body.classList.toggle('notitle',!e.target.checked));
+
+/* ---------- lightbox (view mode) ---------- */
+const lb=$('lb');let cur=0;
+function visible(){return [...document.querySelectorAll('#tiers .card:not(.hide)')].map(c=>+c.dataset.i)}
+function openLb(i){cur=i;const f=flat[i];$('lbi').src=localPreview[f.src]||f.src;$('lbi').alt=f.t;$('lbt').textContent=f.t;
+  const r=$('lbr');r.textContent=f.tier;r.style.background=f.color;
+  const v=visible();$('lbn').textContent=v.includes(i)?`${v.indexOf(i)+1} / ${v.length}`:'';lb.classList.add('on');}
+function step(d){const v=visible();if(!v.length)return;const k=v.indexOf(cur);openLb(v[(k+d+v.length)%v.length]);}
+const closeLb=()=>lb.classList.remove('on');
+$('lbx').onclick=closeLb;
+$('lbp').onclick=e=>{e.stopPropagation();step(-1)};
+$('lbn2').onclick=e=>{e.stopPropagation();step(1)};
+lb.addEventListener('click',e=>{if(e.target===lb)closeLb()});
+document.addEventListener('keydown',e=>{
+  if($('dlg').classList.contains('on')){if(e.key==='Escape')closeDlg();return;}
+  if(!lb.classList.contains('on'))return;
+  if(e.key==='Escape')closeLb();if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1);});
+let sx=null;lb.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+lb.addEventListener('touchend',e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50)step(dx<0?1:-1);sx=null;});
+
+/* ---------- editing: drag & drop ---------- */
+let sortables=[],lastDrag=0;
+function makeSortable(){
+  sortables.forEach(s=>s.destroy());sortables=[];
+  if(typeof Sortable==='undefined'){setStatus('並び替え機能を読み込めませんでした','err');return;}
+  document.querySelectorAll('.items').forEach(el=>{
+    sortables.push(new Sortable(el,{group:'tier',animation:150,delay:150,delayOnTouchOnly:true,forceFallback:true,fallbackTolerance:4,ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',onEnd:()=>{lastDrag=Date.now();syncFromDom();}}));
+  });
+}
+function findItem(id){
+  for(const t of state.tiers){const it=t.items.find(x=>x.id===id);if(it)return it;}
+  return (state.pool||[]).find(x=>x.id===id);
+}
+function syncFromDom(){
+  const all={};state.tiers.forEach(t=>t.items.forEach(x=>all[x.id]=x));(state.pool||[]).forEach(x=>all[x.id]=x);
+  state.tiers.forEach(t=>{const el=document.querySelector(`.items[data-tier="${t.id}"]`);t.items=[...el.querySelectorAll('.card')].map(c=>all[c.dataset.id]).filter(Boolean);});
+  state.pool=[...$('poolItems').querySelectorAll('.card')].map(c=>all[c.dataset.id]).filter(Boolean);
+  changed();
+}
+
+/* ---------- dialogs ---------- */
+function closeDlg(){$('dlg').classList.remove('on');$('dlgBox').innerHTML='';}
+$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))closeDlg()});
+function openDlg(build){const b=$('dlgBox');b.innerHTML='';build(b);$('dlg').classList.add('on');const f=b.querySelector('input[type=text],textarea');if(f){f.focus();f.select?.();}}
+function el(tag,props={},...kids){const e=document.createElement(tag);Object.assign(e,props);kids.forEach(k=>e.append(k));return e;}
+
+function tierDialog(id){
+  const i=state.tiers.findIndex(t=>t.id===id);const t=state.tiers[i];let color=t.color;
+  openDlg(b=>{
+    const name=el('input',{type:'text',value:t.name,maxLength:20});
+    const sw=el('div',{className:'swatches'});
+    const custom=el('input',{type:'color',value:t.color});
+    const paint=()=>sw.querySelectorAll('.sw').forEach(s=>s.classList.toggle('on',s.dataset.c===color));
+    COLORS.forEach(c=>{const s=el('span',{className:'sw'});s.style.background=c;s.dataset.c=c;s.onclick=()=>{color=c;custom.value=c;paint()};sw.appendChild(s)});
+    custom.oninput=()=>{color=custom.value;paint()};sw.appendChild(custom);paint();
+    const up=el('button',{className:'btn',textContent:'↑ 上へ',disabled:i===0});
+    const down=el('button',{className:'btn',textContent:'↓ 下へ',disabled:i===state.tiers.length-1});
+    const below=el('button',{className:'btn',textContent:'＋ この下にランク追加'});
+    const del=el('button',{className:'btn danger',textContent:'このランクを削除'});
+    const cancel=el('button',{className:'btn',textContent:'キャンセル'});
+    const ok=el('button',{className:'btn primary',textContent:'保存'});
+    const apply=()=>{t.name=name.value.trim()||t.name;t.color=color;};
+    up.onclick=()=>{apply();state.tiers.splice(i,1);state.tiers.splice(i-1,0,t);closeDlg();render();changed();};
+    down.onclick=()=>{apply();state.tiers.splice(i,1);state.tiers.splice(i+1,0,t);closeDlg();render();changed();};
+    below.onclick=()=>{apply();state.tiers.splice(i+1,0,{id:uid(),name:'新ランク',color:'#cccccc',items:[]});closeDlg();render();changed();};
+    del.onclick=()=>{
+      if(del.dataset.sure!=='1'){del.dataset.sure='1';del.textContent=t.items.length?`本当に削除？（${t.items.length}作品は未分類へ）`:'本当に削除？';return;}
+      state.pool=(state.pool||[]).concat(t.items);state.tiers.splice(i,1);closeDlg();render();changed();};
+    cancel.onclick=closeDlg;
+    ok.onclick=()=>{apply();closeDlg();render();changed();};
+    name.onkeydown=e=>{if(e.key==='Enter')ok.click()};
+    b.append(el('h3',{textContent:'ランクを編集'}),el('label',{},'ランク名',name),el('label',{},'色',sw),
+      el('div',{className:'row'},up,down,below),el('div',{className:'row split'},del,el('div',{className:'row'},cancel,ok)));
+  });
+}
+function itemDialog(id){
+  const it=findItem(id);if(!it)return;
+  openDlg(b=>{
+    const name=el('input',{type:'text',value:it.t,maxLength:80});
+    const del=el('button',{className:'btn danger',textContent:'この作品を削除'});
+    const cancel=el('button',{className:'btn',textContent:'キャンセル'});
+    const ok=el('button',{className:'btn primary',textContent:'保存'});
+    del.onclick=()=>{
+      if(del.dataset.sure!=='1'){del.dataset.sure='1';del.textContent='本当に削除？';return;}
+      state.tiers.forEach(t=>t.items=t.items.filter(x=>x.id!==id));state.pool=(state.pool||[]).filter(x=>x.id!==id);closeDlg();render();changed();};
+    cancel.onclick=closeDlg;
+    ok.onclick=()=>{it.t=name.value.trim()||it.t;closeDlg();render();changed();};
+    name.onkeydown=e=>{if(e.key==='Enter')ok.click()};
+    b.append(el('h3',{textContent:'作品を編集'}),el('img',{className:'preview',src:localPreview[it.src]||it.src,alt:''}),el('label',{},'作品名',name),
+      el('div',{className:'row split'},del,el('div',{className:'row'},cancel,ok)));
+  });
+}
+function headerDialog(){
+  openDlg(b=>{
+    const ti=el('input',{type:'text',value:state.title||'',maxLength:80});
+    const de=el('textarea',{value:state.desc||''});
+    const cancel=el('button',{className:'btn',textContent:'キャンセル'});
+    const ok=el('button',{className:'btn primary',textContent:'保存'});
+    cancel.onclick=closeDlg;
+    ok.onclick=()=>{state.title=ti.value.trim();state.desc=de.value.trim();closeDlg();render();changed();};
+    b.append(el('h3',{textContent:'タイトルと説明'}),el('label',{},'タイトル',ti),el('label',{},'説明',de),el('div',{className:'row end'},cancel,ok));
+  });
+}
+$('title').onclick=()=>{if(editing)headerDialog()};
+$('desc').onclick=()=>{if(editing)headerDialog()};
+$('addTierTop').onclick=()=>{state.tiers.push({id:uid(),name:'新ランク',color:'#cccccc',items:[]});render();changed();tierDialog(state.tiers[state.tiers.length-1].id);};
+
+/* ---------- add images ---------- */
+$('addImg').onclick=()=>$('file').click();
+$('file').onchange=e=>{const files=[...e.target.files];e.target.value='';addFiles(files,null);};
+async function addFiles(files,tierId){
+  files=files.filter(f=>f&&f.type&&f.type.startsWith('image/'));
+  if(!files.length){setStatus('画像ファイルが見つかりませんでした','err');return;}
+  if(!cfg){settingsDialog();return;}
+  const target=tierId?state.tiers.find(t=>t.id===tierId):null;
+  let done=0,fail=0;
+  for(const f of files){
+    setStatus(`画像をアップロード中… ${done+fail+1}/${files.length}`);
+    try{
+      const blob=await shrink(f);
+      const id=uid();const path='uploads/'+Date.now().toString(36)+'-'+id+'.jpg';
+      await gh('PUT',path,{message:'画像を追加',content:await blobToB64(blob)});
+      localPreview[path]=URL.createObjectURL(blob);
+      const name=(f.name&&f.name!=='image.png'?f.name.replace(/\.[^.]+$/,''):'新しい作品');
+      const item={id,t:name,src:path};
+      if(target)target.items.push(item);else state.pool=(state.pool||[]).concat([item]);
+      done++;render();
+    }catch(err){fail++;console.error(err);if(err.status)setStatus(ghError(err),'err');}
+  }
+  if(done)changed();
+  if(fail)setStatus(`${fail}枚アップロードできませんでした`,'err');
+  if(done&&!target)setTimeout(()=>{$('pool').scrollIntoView({behavior:'smooth',block:'center'})},50);
+}
+/* drag & drop files from the computer */
+const isFileDrag=e=>e.dataTransfer&&[...e.dataTransfer.types].includes('Files');
+let dragDepth=0;
+function dropTarget(e){const el=document.elementFromPoint(e.clientX,e.clientY);const box=el&&el.closest('.tier, .pool');if(!box)return null;return box;}
+function markTarget(box){document.querySelectorAll('.droptarget').forEach(x=>x.classList.remove('droptarget'));if(box)box.classList.add('droptarget');}
+window.addEventListener('dragenter',e=>{if(!editing||!isFileDrag(e))return;e.preventDefault();dragDepth++;document.body.classList.add('filedrag');});
+window.addEventListener('dragover',e=>{if(!editing||!isFileDrag(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy';markTarget(dropTarget(e));});
+window.addEventListener('dragleave',e=>{if(!editing||!isFileDrag(e))return;dragDepth=Math.max(0,dragDepth-1);if(!dragDepth){document.body.classList.remove('filedrag');markTarget(null);}});
+window.addEventListener('drop',e=>{
+  if(!editing)return;
+  const hasFiles=isFileDrag(e);
+  e.preventDefault();dragDepth=0;document.body.classList.remove('filedrag');
+  const box=dropTarget(e);markTarget(null);
+  if(!hasFiles){if(e.dataTransfer&&e.dataTransfer.types.includes('text/uri-list'))setStatus('ネット上の画像は直接追加できません。一度保存してからドロップするか、画像をコピーして Ctrl+V で貼り付けてください','err');return;}
+  const tierId=box&&box.classList.contains('tier')?box.querySelector('.items').dataset.tier:null;
+  addFiles([...e.dataTransfer.files],tierId);
+});
+/* paste (Ctrl+V) */
+document.addEventListener('paste',e=>{
+  if(!editing||$('dlg').classList.contains('on'))return;
+  const files=[...(e.clipboardData?.items||[])].filter(i=>i.kind==='file').map(i=>i.getAsFile()).filter(Boolean);
+  if(files.length){e.preventDefault();addFiles(files,null);}
+});
+async function shrink(file){
+  const bmp=await createImageBitmap(file);const W=Math.min(360,bmp.width);const H=Math.round(bmp.height*W/bmp.width);
+  const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(bmp,0,0,W,H);
+  return await new Promise(res=>c.toBlob(res,'image/jpeg',0.82));
+}
+
+/* ---------- GitHub API ---------- */
+function rawFallback(img,src){img.onerror=null;if(cfg&&!/^(https?:|blob:|data:)/.test(src))img.src=`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch||'main'}/${src}`;}
+
+function apiUrl(path){return `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;}
+async function gh(method,path,body){
+  const q=method==='GET'?'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now():'';
+  const r=await fetch(apiUrl(path)+q,{method,
+    headers:{'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},
+    body:body?JSON.stringify({...body,branch:cfg.branch||'main'}):undefined,cache:'no-store'});
+  if(!r.ok){const e=new Error('GitHub '+r.status);e.status=r.status;try{e.detail=(await r.json()).message}catch(_){}throw e;}
+  return r.json();
+}
+function utf8ToB64(s){const b=new TextEncoder().encode(s);let bin='';for(let i=0;i<b.length;i+=0x8000)bin+=String.fromCharCode(...b.subarray(i,i+0x8000));return btoa(bin);}
+function b64ToUtf8(s){const bin=atob(s.replace(/\n/g,''));return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0)));}
+function blobToB64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(blob);});}
+async function loadFromGitHub(){
+  const j=await gh('GET','data.json');dataSha=j.sha;
+  const d=JSON.parse(b64ToUtf8(j.content));
+  state={title:d.title||'',desc:d.desc||'',tiers:d.tiers||[],pool:d.pool||[]};
+}
+function ghError(err){
+  if(err.status===401)return 'トークンが無効です。「設定」からトークンを入れ直してください';
+  if(err.status===403)return '権限がありません（トークンの Contents 権限が「Read and write」か確認）';
+  if(err.status===404)return 'リポジトリが見つかりません（ユーザー名・リポジトリ名、トークンの対象リポジトリを確認）';
+  if(err.status===409)return '他の場所で更新されています。ページを再読み込みしてください';
+  return '通信エラー（'+(err.message||'')+'）';
+}
+
+/* ---------- saving ---------- */
+function setStatus(msg,cls){const s=$('status');s.textContent=msg;s.className='status'+(cls?' '+cls:'');}
+function changed(){dirty=true;setStatus('未保存の変更あり（数秒後に自動保存）');clearTimeout(saveTimer);saveTimer=setTimeout(save,4000);}
+async function save(){
+  clearTimeout(saveTimer);
+  if(!cfg){settingsDialog();return;}
+  if(saving){saveTimer=setTimeout(save,1000);return;}
+  if(!dirty){setStatus('保存済み ✓');return;}
+  saving=true;dirty=false;setStatus('保存中…');
+  try{
+    const body=JSON.stringify({title:state.title,desc:state.desc,tiers:state.tiers,pool:state.pool||[]},null,1);
+    let r;
+    try{r=await gh('PUT','data.json',{message:'ティア表を更新',content:utf8ToB64(body),sha:dataSha||undefined});}
+    catch(err){
+      if(err.status===409||err.status===422){const j=await gh('GET','data.json');dataSha=j.sha;r=await gh('PUT','data.json',{message:'ティア表を更新',content:utf8ToB64(body),sha:dataSha});}
+      else throw err;}
+    dataSha=r.content.sha;
+    setStatus(dirty?'未保存の変更あり…':'保存しました ✓ 公開ページへの反映は1〜2分後');
+  }catch(err){dirty=true;setStatus('保存に失敗：'+ghError(err),'err');}
+  finally{saving=false;if(dirty){clearTimeout(saveTimer);saveTimer=setTimeout(save,4000);}}
+}
+window.addEventListener('beforeunload',e=>{if(dirty||saving){e.preventDefault();e.returnValue='';}});
+
+/* ---------- settings (token) ---------- */
+function settingsDialog(){
+  const g=guessRepo();const c=cfg||{owner:g.owner,repo:g.repo,branch:'main',token:''};
+  openDlg(b=>{
+    const owner=el('input',{type:'text',value:c.owner,placeholder:'GitHubのユーザー名'});
+    const repo=el('input',{type:'text',value:c.repo,placeholder:'リポジトリ名'});
+    const branch=el('input',{type:'text',value:c.branch||'main'});
+    const token=el('input',{type:'password',value:c.token||'',placeholder:'github_pat_…',autocomplete:'off'});
+    token.style.cssText='background:#2a2a2a;border:1px solid #444;color:#eee;padding:9px 10px;border-radius:8px;font-size:15px';
+    const msg=el('div',{className:'hint'});
+    const logout=el('button',{className:'btn danger',textContent:'このブラウザから削除'});logout.hidden=!cfg;
+    const cancel=el('button',{className:'btn',textContent:'キャンセル'});
+    const ok=el('button',{className:'btn primary',textContent:'接続して編集'});
+    logout.onclick=()=>{saveCfg(null);cfg=null;closeDlg();if(editing){editing=false;document.body.classList.remove('edit');$('editBtn').textContent='編集する';render();}$('editBtn').hidden=true;};
+    cancel.onclick=closeDlg;
+    ok.onclick=async()=>{
+      const nc={owner:owner.value.trim(),repo:repo.value.trim(),branch:branch.value.trim()||'main',token:token.value.trim()};
+      if(!nc.owner||!nc.repo||!nc.token){msg.textContent='すべて入力してください';return;}
+      ok.disabled=true;msg.textContent='確認中…';
+      const prev=cfg;cfg=nc;
+      try{await loadFromGitHub();saveCfg(nc);closeDlg();$('editBtn').hidden=false;
+        if(!editing){editing=true;document.body.classList.add('edit');$('editBtn').textContent='編集を終える';}
+        render();setStatus('GitHubに接続しました');}
+      catch(err){cfg=prev;msg.textContent=ghError(err);ok.disabled=false;}
+    };
+    b.append(el('h3',{textContent:'編集の設定（このブラウザにだけ保存されます）'}),
+      el('label',{},'GitHubユーザー名',owner),el('label',{},'リポジトリ名',repo),el('label',{},'ブランチ',branch),el('label',{},'アクセストークン',token),msg,
+      el('div',{className:'row split'},logout,el('div',{className:'row'},cancel,ok)));
+  });
+}
+
+/* ---------- edit mode toggle ---------- */
+$('editBtn').onclick=async()=>{
+  if(!editing&&!cfg){settingsDialog();return;}
+  if(editing&&(dirty||saving)){await save();}
+  editing=!editing;document.body.classList.toggle('edit',editing);
+  $('editBtn').textContent=editing?'編集を終える':'編集する';
+  if(!editing){sortables.forEach(s=>s.destroy());sortables=[];}
+  render();
+};
+$('saveNow').onclick=()=>{if(dirty)save();else setStatus('保存済み ✓');};
+$('settingsBtn').onclick=settingsDialog;
+
+/* ---------- boot ---------- */
+async function loadPublic(){
+  const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});const d=await r.json();
+  state={title:d.title||'',desc:d.desc||'',tiers:d.tiers||[],pool:d.pool||[]};
+}
+(async()=>{
+  try{
+    if(cfg){
+      $('editBtn').hidden=false;
+      try{await loadFromGitHub();}
+      catch(e){await loadPublic();setTimeout(()=>setStatus('GitHubから読み込めませんでした：'+ghError(e),'err'),0);}
+    }else await loadPublic();
+  }catch(e){$('cnt').textContent='データを読み込めませんでした';}
+  render();
+  if(location.hash==='#edit'&&!cfg)settingsDialog();
+})();
+window.addEventListener('hashchange',()=>{if(location.hash==='#edit'&&!cfg)settingsDialog();});
+</script>
+</body>
+</html>
